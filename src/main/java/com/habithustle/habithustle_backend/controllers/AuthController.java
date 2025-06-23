@@ -2,6 +2,7 @@ package com.habithustle.habithustle_backend.controllers;
 
 import com.habithustle.habithustle_backend.DTO.EmailReq;
 import com.habithustle.habithustle_backend.DTO.LoginReq;
+import com.habithustle.habithustle_backend.DTO.ResetPasswordreq;
 import com.habithustle.habithustle_backend.model.PasswordResetToken;
 import com.habithustle.habithustle_backend.model.User;
 import com.habithustle.habithustle_backend.repository.PasswordResetRepository;
@@ -22,7 +23,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -122,38 +122,87 @@ try {
     }
     }
 
- @PostMapping("/forgot-password")
- public ResponseEntity<?> forgotPassword(@RequestBody EmailReq email ){
-    if(!userRepository.existsByEmail(email.getEmail())){
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                "status",0,
-                "message","email does not exist"
-        ));
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody EmailReq email) {
+        try {
+            System.out.println("email: " + email.getEmail());
+
+            if (!userRepository.existsByEmail(email.getEmail())) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                        "status", 0,
+                        "message", "Email does not exist"
+                ));
+            }
+
+            // Generate OTP
+            String newToken = generateOTP();
+
+            // Remove old OTPs
+            tokenRepo.deleteByEmail(email.getEmail());
+
+            // Save new token
+            PasswordResetToken token = PasswordResetToken.builder()
+                    .email(email.getEmail())
+                    .token(newToken)
+                    .expireAt(LocalDateTime.now().plusMinutes(30))
+                    .build();
+
+            tokenRepo.save(token);
+
+            // Send email
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(email.getEmail());
+            message.setSubject("Password Reset Request");
+            message.setText("OTP to reset your password is: " + newToken);
+            mailSender.send(message);
+
+            return ResponseEntity.ok(Map.of(
+                    "status", 1,
+                    "message", "OTP sent successfully"
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", 0,
+                    "message", "Failed to send OTP. Please try again later."
+            ));
+        }
     }
-     String newToken = generateOTP();
 
-    tokenRepo.deleteByEmail(email.getEmail());
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordreq req) {
+        try {
+            Optional<User> userOpt = userRepository.findUserByEmail(req.getEmail());
 
-     PasswordResetToken token=PasswordResetToken.builder()
-             .email(email.getEmail())
-             .token(newToken)
-             .expireAt(LocalDateTime.now().plusMinutes(30))
-             .build();
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                        "status", 0,
+                        "message", "Invalid email"
+                ));
+            }
 
-     tokenRepo.save(token);
+            User user = userOpt.get();
+            user.setPassword(passwordEncoder.encode(req.getPassword()));
+            userRepository.save(user);
 
-     // Send Email
-     SimpleMailMessage message = new SimpleMailMessage();
-     message.setTo(email.getEmail());
-     message.setSubject("Password Reset Request");
-     message.setText("OTP to Reset Password: " + newToken);
-     mailSender.send(message);
+            // Remove OTP token after successful reset
+            tokenRepo.deleteByEmail(user.getEmail());
 
-     return ResponseEntity.ok(Map.of(
-             "status", 1,
-             "message", "OTP sent successfully"
-     ));
- }
+            return ResponseEntity.ok(Map.of(
+                    "status", 1,
+                    "message", "Password reset successfully"
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", 0,
+                    "message", "Something went wrong during password reset"
+            ));
+        }
+    }
+
 
 
 public String generateOTP() {
