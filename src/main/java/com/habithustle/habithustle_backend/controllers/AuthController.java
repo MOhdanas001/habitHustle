@@ -3,10 +3,12 @@ package com.habithustle.habithustle_backend.controllers;
 import com.habithustle.habithustle_backend.DTO.EmailReq;
 import com.habithustle.habithustle_backend.DTO.LoginReq;
 import com.habithustle.habithustle_backend.DTO.ResetPasswordreq;
+import com.habithustle.habithustle_backend.DTO.UserRegistrationReq;
 import com.habithustle.habithustle_backend.model.PasswordResetToken;
 import com.habithustle.habithustle_backend.model.User;
 import com.habithustle.habithustle_backend.repository.PasswordResetRepository;
 import com.habithustle.habithustle_backend.repository.UserRepository;
+import com.habithustle.habithustle_backend.services.ImagekitService;
 import com.habithustle.habithustle_backend.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,10 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -38,41 +38,53 @@ public class AuthController {
     private PasswordResetRepository tokenRepo;
     @Autowired
     private JavaMailSender mailSender;
+    @Autowired
+    private ImagekitService imagekitService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> RegisterUser(@RequestBody User user) {
+    public ResponseEntity<?> registerUser(
+            @RequestPart UserRegistrationReq userDto,
+            @RequestPart MultipartFile imageFile) {
+
         try {
-            // Check if email already exists
-            if (userRepository.existsByEmail(user.getEmail())) {
-                return ResponseEntity.ok(Map.of(
-                        "status", 0,
-                        "message", "Email already exists"
-                ));
+            // 1. Check for email or username already taken
+            if (userRepository.existsByEmail(userDto.getEmail())) {
+                return ResponseEntity.ok(Map.of("status", 0, "message", "Email already exists"));
             }
 
-            // Check if username already exists
-            if (userRepository.existsByUsername(user.getUsername())) {
-                return ResponseEntity.ok(Map.of(
-                        "status", 0,
-                        "message", "Username already exists"
-                ));
+            if (userRepository.existsByUsername(userDto.getUsername())) {
+                return ResponseEntity.ok(Map.of("status", 0, "message", "Username already exists"));
             }
 
-            // Save new user
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            // 2. Upload the image and get resized CDN URL
+            String imageUrl = imagekitService.uploadProfile(imageFile);
+
+            // 3. Create actual User object from DTO
+            User user = new User();
+            user.setName(userDto.getName());
+            user.setEmail(userDto.getEmail());
+            user.setUsername(userDto.getUsername());
+            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
             user.setRole("User");
+            user.setProfileURL(imageUrl); // <-- set the uploaded image URL
 
+            // 4. Save user to DB
             User savedUser = userRepository.save(user);
+
+            // 5. Generate JWT token
             String token = jwtUtil.generateToken(savedUser);
 
             return ResponseEntity.ok(Map.of(
                     "status", 1,
+                    "message", "User registered successfully",
                     "token", token,
                     "username", savedUser.getUsername(),
                     "email", savedUser.getEmail()
+
             ));
+
         } catch (Exception e) {
-            e.printStackTrace(); // You can also log this
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                     "status", 0,
                     "message", "An error occurred during registration"
@@ -205,10 +217,12 @@ try {
 
 
 
-public String generateOTP() {
-    int otp = 10000 + new Random().nextInt(90000); // generates between 10000–99999
-    return String.valueOf(otp);
-}
+
+
+    public String generateOTP() {
+        int otp = 10000 + new Random().nextInt(90000); // generates between 10000–99999
+        return String.valueOf(otp);
+    }
 
 
 }

@@ -41,16 +41,17 @@ public class User {
     @NotBlank
     private String password;
 
+    private String profileURL;
+
     private String role;
 
     // Wallet and Bet are separate documents in MongoDB. Use DBRef or embedded models.
-    @DBRef
     private Wallet wallet;
 
-    @DBRef
+
     private Set<String> bets = new HashSet<>();
 
-    @DBRef
+
     private Set<String> friends=new HashSet<>();
 
     @CreatedDate

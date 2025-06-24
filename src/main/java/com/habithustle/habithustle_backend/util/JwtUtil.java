@@ -36,7 +36,7 @@ public class JwtUtil {
 
    public String generateToken(User userDetails) {
       return Jwts.builder()
-              .setSubject(userDetails.getUsername())
+              .setSubject(userDetails.getEmail())
               .setIssuedAt(new Date())
               .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hour
               .signWith(getSignInKey(), SignatureAlgorithm.HS256)
