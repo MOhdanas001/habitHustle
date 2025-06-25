@@ -1,0 +1,49 @@
+package com.habithustle.habithustle_backend.model;
+
+import com.habithustle.habithustle_backend.DTO.SearchRequest;
+import com.habithustle.habithustle_backend.model.bet.BetStatus;
+import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Document(collection = "hustle")
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Builder
+public class Hustle
+{
+    @Id
+    private String id;
+    private String name;
+    private String description;
+    private Double amount;
+    private String status;
+    private String proofDescription;
+    private List<SearchRequest.Participants> participants;
+
+    private BetStatus betStatus;                 // NOT_STARTED, ACTIVE, COMPLETED
+
+    private String verifierId;                   // Optional: can also be one of the participants
+
+    private List<LocalDate> taskDays;            // Required activity days
+    private Integer allowedOffDays;
+
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
+
+    private List<String> generalProofs;          // Optional general proof storage
+
+    @CreatedDate
+    private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
+}

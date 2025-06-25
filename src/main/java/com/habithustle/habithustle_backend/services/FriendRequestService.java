@@ -22,6 +22,8 @@ public class FriendRequestService {
     private FriendRequestRepository friendRequestRepo;
     @Autowired
     private UserRepository userRepo;
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
 
     public String sendRequest(String senderId, String receiverId) {
@@ -74,12 +76,8 @@ public class FriendRequestService {
                 .orElse(List.of());
     }
 
-    @Autowired
-    private MongoTemplate mongoTemplate;
-
     public void addFriendBothWays(String userAId, String userBId) {
 
-        System.out.print("Addind Two way friends");
         // Ensure no null or same ID friendship
         if (userAId == null || userBId == null || userAId.equals(userBId)) {
             throw new IllegalArgumentException("User IDs must be non-null and different.");
