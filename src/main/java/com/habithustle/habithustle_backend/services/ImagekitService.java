@@ -27,5 +27,24 @@ public class ImagekitService {
         return result.getUrl();
     }
 
+    public String uploadProof(MultipartFile file) {
+        try {
+            FileCreateRequest request = new FileCreateRequest(file.getBytes(), file.getOriginalFilename());
+            request.setFolder("/user-proof");
+            request.setUseUniqueFileName(true);
+
+            Result result = imagekit.upload(request);
+
+            if (result.getUrl() == null || result.getFileId() == null) {
+                throw new RuntimeException("Image upload failed: no URL or File ID returned.");
+            }
+
+            return result.getUrl();
+        } catch (Exception e) {
+            throw new RuntimeException("Image upload error: " + e.getMessage(), e);
+        }
+    }
+
+
 
 }

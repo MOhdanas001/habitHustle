@@ -5,8 +5,10 @@ import com.habithustle.habithustle_backend.model.bet.PaymentStatus;
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 
 @Data
@@ -25,7 +27,7 @@ public class SearchRequest {
             private LocalDateTime startDate;
             private LocalDateTime endDate;
 
-            private List<LocalDate> taskDays;
+            private List<DayOfWeek> taskDays;
             private Integer allowedOffDays;
         }
 
@@ -36,7 +38,7 @@ public class SearchRequest {
         private String userId;
         private PaymentStatus paymentStatus;          // UNPAID, PAID
         private BetParticipationStatus betStatus;     // NOT_STARTED, ACTIVE, FAILED, COMPLETED
-        private List<String> proofs;                  // Image URLs / file references
+        private HashMap<String,Integer> proofs;                  // Image URLs / file references
         private Integer usedOffDays;
     }
 }

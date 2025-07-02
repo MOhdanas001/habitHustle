@@ -8,9 +8,11 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Document(collection = "hustle")
 @NoArgsConstructor
@@ -33,13 +35,13 @@ public class Hustle
 
     private String verifierId;                   // Optional: can also be one of the participants
 
-    private List<LocalDate> taskDays;            // Required activity days
+    private List<DayOfWeek> taskDays;            // Required activity days
     private Integer allowedOffDays;
 
     private LocalDateTime startDate;
     private LocalDateTime endDate;
 
-    private List<String> generalProofs;          // Optional general proof storage
+    private Map<String, String> generalProofs;          // Optional general proof storage
 
     @CreatedDate
     private LocalDateTime createdAt;
