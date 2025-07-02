@@ -24,7 +24,7 @@ public class HustleService {
     @Autowired
     private UserRepository  userRepository;
     @Autowired
-    private ImagekitService imagekitService
+    private ImagekitService imagekitService;
 
     public Object createBet(SearchRequest.BetRequestDTO req){
 
@@ -39,7 +39,7 @@ public class HustleService {
                         .userId(id)
                         .paymentStatus(PaymentStatus.UNPAID)
                         .betStatus(BetParticipationStatus.NOT_STARTED)
-                        .proofs(new ArrayList<>())
+                        .proofs(new HashMap<>())
                         .usedOffDays(0)
                         .build()
         ).toList();
@@ -55,7 +55,7 @@ public class HustleService {
                 .startDate(req.getStartDate())
                 .endDate(req.getEndDate())
                 .betStatus(BetStatus.NOT_STARTED)
-                .generalProofs(new ArrayList<>())
+                .generalProofs(new HashMap<>())
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
